@@ -5,6 +5,7 @@ import {
 } from 'apollo-server-core';
 import express from 'express';
 import http from 'http';
+import { getSession } from 'next-auth/react';
 import typeDefs from "./graphql/typeDefs";
 import resolvers from "./graphql/resolvers";
 import { makeExecutableSchema } from '@graphql-tools/schema';
@@ -29,6 +30,12 @@ async function startApolloServer() {
         schema,
         csrfPrevention: true,
         cache: 'bounded',
+        context: async ({req, res}) => {
+            const session = await getSession({ req })
+            return {
+                session
+            }
+        },
         plugins: [
             ApolloServerPluginDrainHttpServer({ httpServer }),
             ApolloServerPluginLandingPageLocalDefault({ embed: true }),
