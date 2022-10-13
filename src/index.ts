@@ -6,10 +6,12 @@ import {
 import express from 'express';
 import http from 'http';
 import { getSession } from 'next-auth/react';
+import { PrismaClient } from "@prisma/client";
 import typeDefs from "./graphql/typeDefs";
 import resolvers from "./graphql/resolvers";
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import * as dotenv from 'dotenv';
+import { GraphQlContext, Session } from './types/type';
 
 async function startApolloServer() {
     dotenv.config()
@@ -26,14 +28,17 @@ async function startApolloServer() {
         credentials: true,
     }
 
+    const prisma = new PrismaClient()
+
     const server = new ApolloServer({
         schema,
         csrfPrevention: true,
         cache: 'bounded',
-        context: async ({req, res}) => {
+        context: async ({req, res}): Promise<GraphQlContext> => {
             const session = await getSession({ req })
             return {
-                session
+                session: session as Session,
+                prisma
             }
         },
         plugins: [
