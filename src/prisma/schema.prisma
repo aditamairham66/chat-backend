@@ -40,11 +40,14 @@ model User {
   id            String    @id @default(auto()) @map("_id") @db.ObjectId
   name          String?
   email         String?   @unique
-  username         String?   @unique
+  username      String?   @unique
   emailVerified DateTime?
   image         String?
   accounts      Account[]
   sessions      Session[]
+
+  conversationParticipant  ConversationParticipant[]
+  message  Message[]
 }
 
 model VerificationToken {
@@ -54,4 +57,44 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Conversation {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  conversationParticipant  ConversationParticipant[]
+  message  Message[]
+
+  lastMessageID String  @unique
+  lastMessage   Message? @relation(name: "lastMessage", fields: [lastMessageID], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model ConversationParticipant {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  userID        String
+  user          User @relation(fields: [userID], references: [id])
+
+  conversationID  String
+  conversation    Conversation @relation(fields: [conversationID], references: [id])
+
+  isRead         Boolean
+}
+
+model Message {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  conversationID  String
+  conversation    Conversation @relation(fields: [conversationID], references: [id])
+  
+  senderID        String
+  sender          User @relation(fields: [senderID], references: [id])
+
+  isLastMessage   Conversation? @relation(name: "lastMessage")
 }
