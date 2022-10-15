@@ -25,7 +25,7 @@ const resolvers = {
                 const getChat = await prisma.conversation.findMany({
                     // where: {
                     //     conversationParticipant: {
-                    //         some: {
+                    //         none: {
                     //             userID: {
                     //                 equals: userId
                     //             }
@@ -36,6 +36,7 @@ const resolvers = {
                 })
 
                 return getChat.filter((row) => !!row.conversationParticipant.find((user) => user.userID === userId))
+                // return getChat
             } catch (error: any) {
                 throw new ApolloError(error.message)
             }
