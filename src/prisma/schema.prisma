@@ -67,8 +67,8 @@ model Conversation {
   conversationParticipant  ConversationParticipant[]
   message  Message[]
 
-  lastMessageID String  @unique
-  lastMessage   Message? @relation(name: "lastMessage", fields: [lastMessageID], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lastMessageID String?  @unique
+  lastMessage   Message? @relation(name: "lastestMessage", fields: [lastMessageID], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 model ConversationParticipant {
@@ -96,5 +96,5 @@ model Message {
   senderID        String
   sender          User @relation(fields: [senderID], references: [id])
 
-  isLastMessage   Conversation? @relation(name: "lastMessage")
+  isLastMessage   Conversation? @relation(name: "lastestMessage")
 }
