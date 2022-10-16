@@ -97,4 +97,6 @@ model Message {
   sender          User @relation(fields: [senderID], references: [id])
 
   isLastMessage   Conversation? @relation(name: "lastestMessage")
+
+  body        String
 }
