@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { ApolloError } from "apollo-server-core";
+import { withFilter } from "graphql-subscriptions";
 import { ConversationPopulated, GraphQlContext } from "../../types/type"
 
 const resolvers = {
@@ -49,7 +50,7 @@ const resolvers = {
             context: GraphQlContext 
         ): Promise<{ conversationId: string }> => {
             const { usersList } = args
-            const { session, prisma } = context
+            const { session, prisma, pubsub } = context
 
             if (!session?.user) {
                 throw new ApolloError('Not Authorized')
@@ -76,6 +77,10 @@ const resolvers = {
                     include: conversationPopulated
                 })
 
+                pubsub?.publish("CONVERSATION_CREATE", {
+                    conversationCreated: createChat
+                })
+
                 return {
                     conversationId: createChat.id
                 }
@@ -84,9 +89,47 @@ const resolvers = {
             }
         }
     },
+    Subscription: {
+        conversationCreated: {
+            subscribe: withFilter(
+                ( 
+                    _: any, 
+                    __: any, 
+                    context: GraphQlContext 
+                ) => {
+                    const { pubsub } = context
+    
+                    return pubsub!.asyncIterator(['CONVERSATION_CREATE'])
+                },
+                ( 
+                    payload: ConversationCreatedSubscribeProps, 
+                    _, 
+                    context: GraphQlContext 
+                ) => {
+                    const { session } = context
+                    const {
+                        conversationCreated: {
+                            conversationParticipant: participants
+                        }
+                    } = payload
+
+                    // Only push an update if the comment is on
+                    // the correct repository for this operation
+                    const isChatParticipant = !!participants.find(
+                        (row) => row.userID === session?.user?.id
+                    )
+                    return isChatParticipant
+                },
+            ),
+        },
+    },
 }
 
 export default resolvers
+
+export interface ConversationCreatedSubscribeProps {
+    conversationCreated: ConversationPopulated
+}
 
 export const userPopulated = Prisma.validator<Prisma.ConversationParticipantInclude>()({
     user: {
